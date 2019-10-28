@@ -4,7 +4,6 @@ require 'streamio-ffmpeg'
 require 'sidekiq'
 require 'sidekiq/api'
 require 'sidekiq/web'
-require 'pry'
 
 require_relative './workers/video_upload_worker.rb'
 
@@ -20,12 +19,10 @@ class Video
 end
 
 post '/upload' do
+  halt(400, { message:'Bad Request'}.to_json) unless params[:file] && params[:file][:type] == 'video/mp4'
+
   filename = params[:file][:filename]
   file = params[:file][:tempfile]
-
-  File.open("/tmp/#{filename}", 'wb') do |f|
-    f.write(file.read)
-  end
 
   video = Video.create(file_format: File.extname(file.path), file_name: filename)
   VideoUploadWorker.perform_async(video.file_name, [params[:time_start], params[:time_end]])
@@ -35,7 +32,7 @@ end
 get "/status" do
   video = Video.where(params[:name]).first
 
-  halt(404, { message:'failed to find video'}.to_json) unless video
+  halt(404, { message:'Failed to find video'}.to_json) unless video
 
   @video_status = video.status
 end
@@ -43,8 +40,8 @@ end
 get "/watch" do
   video = Video.where(params[:name]).first
 
-  halt(404, { message:'failed to find video'}.to_json) unless video
+  halt(404, { message:'Failed to find video'}.to_json) unless video
 
-  @video = video
+  @video = video.file_data
 end
   
