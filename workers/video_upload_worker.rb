@@ -7,32 +7,33 @@ class VideoUploadWorker
   
   def perform(video_name, timing)
     video = Video.find_by(file_name: video_name)
+    success = change_video(video, timing)
 
-    cut_video(video, timing)
+    update_video_status(video, FAILED) unless success
   end
 
   private
 
-  def cut_video(video, timing)
-    movie = FFMPEG::Movie.new("/tmp/#{video.file_name}")
-    update_video_status(video, SCHEDULED) if movie
+  def change_video(video, timing)
+    movie = new_movie(video)
+    options = generate_cut_options(movie, timing)
+    update_video_status(video, PROCESSING)
 
-    if generate_cut_options(movie, timing)
-      options = generate_cut_options(movie, timing)
-      update_video_status(video, PROCESSING)
-      transcoded_video = movie.transcode("#{video.id}-#{video.file_name}", options)
-      video.update(file_data: movie.path)
-      update_video_status(video, DONE) if transcoded_video && video.file_data == movie.path
-    else
-      update_video_status(video, FAILED)
-    end
+    movie.transcode("#{video.id}-#{video.file_name}", options)
+    video.update(file_data: movie.path)
+    update_video_status(video, DONE)
+  end
+
+  def new_movie(video)
+    update_video_status(video, SCHEDULED)
+    FFMPEG::Movie.new("/tmp/#{video.file_name}")
   end
 
   def generate_cut_options(movie, timing)
-    if ((0..movie.duration) && [timing.first.to_i, timing.last.to_i]).present?
+    all_timing = (0..movie.duration)
+    if all_timing.include?(timing.first.to_i) &&
+      all_timing.include?(timing.last.to_i)
       { custom: ['-ss', timing.first.to_i, '-t', timing.last.to_i] }
-    else
-      nil
     end
   end
 

@@ -9,6 +9,7 @@ describe 'Video Changer' do
     )
 
     @file = Rack::Test::UploadedFile.new('./spec/files/filename.mp4', 'video/mp4')
+    @incorrect_file = Rack::Test::UploadedFile.new('./spec/files/filename.erb', 'text/plain')
   end
 
   it 'should show error when bad params' do
@@ -53,9 +54,21 @@ describe 'Video Changer' do
     expect(last_response.status).to eq(200)
   end
 
+  it 'should return bad request' do
+    post '/upload', { file: nil, time_start: 15, time_end: 30 }
+
+    expect(last_response.status).to eq(400)
+  end
+
+  it 'should return bad request' do
+    post '/upload', { file: @incorrect_file, time_start: 15, time_end: 30 }
+
+    expect(last_response.status).to eq(400)
+  end
+
   it 'should transcode video' do
     post '/upload', { file: @file, time_start: 15, time_end: 30 }
 
     expect(last_response.status).to eq(200)
-  end  
+  end
 end
