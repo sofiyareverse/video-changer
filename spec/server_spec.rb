@@ -1,5 +1,4 @@
 require File.expand_path 'spec_helper.rb', __dir__
-require 'pry'
 
 describe 'Video Changer' do
   before(:all) do

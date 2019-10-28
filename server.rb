@@ -19,18 +19,17 @@ class Video
 end
 
 post '/upload' do
-  halt(400, { message:'Bad Request'}.to_json) unless params[:file] && params[:file][:type] == 'video/mp4'
+  halt(400, { message:'Bad Request'}.to_json) if params.dig(:file, :type) != 'video/mp4'
 
   filename = params[:file][:filename]
   file = params[:file][:tempfile]
+  Video.create(file_format: File.extname(file.path), file_name: filename)
 
-  video = Video.create(file_format: File.extname(file.path), file_name: filename)
-  VideoUploadWorker.perform_async(video.file_name, [params[:time_start], params[:time_end]])
-  @video = video
+  VideoUploadWorker.perform_async(filename, [params[:time_start], params[:time_end]])
 end
 
 get "/status" do
-  halt(400, { message:'Bad Request'}.to_json) unless params[:name]
+  halt(400, { message:'Bad Request'}.to_json) if params[:name].nil?
   video = Video.where(file_name: params[:name]).first  
 
   halt(404, { message:'Failed to find video'}.to_json) unless video
@@ -39,7 +38,7 @@ get "/status" do
 end
 
 get "/watch" do
-  halt(400, { message:'Bad Request'}.to_json) unless params[:name]
+  halt(400, { message:'Bad Request'}.to_json) if params[:name].nil?
   video = Video.where(file_name: params[:name]).first
 
   halt(404, { message:'Failed to find video'}.to_json) unless video
