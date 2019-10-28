@@ -30,7 +30,8 @@ post '/upload' do
 end
 
 get "/status" do
-  video = Video.where(params[:name]).first
+  halt(400, { message:'Bad Request'}.to_json) unless params[:name]
+  video = Video.where(file_name: params[:name]).first  
 
   halt(404, { message:'Failed to find video'}.to_json) unless video
 
@@ -38,7 +39,8 @@ get "/status" do
 end
 
 get "/watch" do
-  video = Video.where(params[:name]).first
+  halt(400, { message:'Bad Request'}.to_json) unless params[:name]
+  video = Video.where(file_name: params[:name]).first
 
   halt(404, { message:'Failed to find video'}.to_json) unless video
 
