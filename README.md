@@ -12,7 +12,7 @@ Welcome to video changer project! Here is a little instruction to test it.
     
     bundle install
   
-  2. Open mongoid.config and add new db name to this field 'database: '
+  2. Open mongoid.config and add new db name to this field 'database: '.
 
 3) Run redis, sidekiq to perform background tasks and run the server:
 
